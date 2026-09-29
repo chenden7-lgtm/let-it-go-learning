@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Let It Go 冰雪奇緣 · 雙語歌詩與英文親子學習館</title>
+  <meta name="description" content="Frozen《Let It Go》中英對照歌詞、單字解析、官方中譯與溫馨親子導讀互動學習網頁">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%200%20100%20100%22><text y=%22.9em%22 font-size=%2290%22>❄️</text></svg>">
+</head>
+<body>
+  <!-- Snowflake Background Canvas -->
+  <canvas id="snow-canvas"></canvas>
+
+  <div class="app-container">
+    <!-- Header / Hero Section -->
+    <header class="hero-header">
+      <div class="hero-badge">
+        <span class="sparkle-icon">✨</span> Disney Frozen · 親子英語唱學樂園
+      </div>
+      <h1 class="hero-title">
+        <span class="gradient-text">Let It Go</span> 放開手
+      </h1>
+      <p class="hero-subtitle">
+        40 句經典歌詞逐句解析 · 直譯對照 · 官方中文版 · 核心單字發音 · 親子共讀小語
+      </p>
+
+      <!-- Quick Action Stats & Controls -->
+      <div class="hero-controls">
+        <div class="stat-pill">
+          <span class="stat-num" id="total-lines-count">40</span>
+          <span class="stat-lbl">句歌詞</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-num" id="total-vocab-count">50+</span>
+          <span class="stat-lbl">精選單字</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-num" id="fav-count">0</span>
+          <span class="stat-lbl">我的收藏</span>
+        </div>
+
+        <div class="header-buttons">
+          <button id="karaoke-play-btn" class="btn btn-primary" title="自動連續逐句朗讀跟唱">
+            <span class="icon">▶️</span> <span id="play-btn-text">自動逐句朗讀</span>
+          </button>
+          <button id="toggle-snow-btn" class="btn btn-glass" title="切換飄雪背景">
+            <span class="icon">❄️</span> 飄雪特效
+          </button>
+          <button id="github-guide-btn" class="btn btn-gh" title="如何部署至 GitHub Pages">
+            <svg class="gh-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            部署到 GitHub
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Toolbar: Search, Filters & View Switcher -->
+    <section class="toolbar-section">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="搜尋英文歌詞、中文翻譯或單字 (如: snow, 女王, hold back)..." autocomplete="off">
+        <button id="clear-search-btn" class="clear-btn" style="display:none;">✕</button>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="cards">
+          <span class="tab-icon">🪟</span> 詳細導讀卡
+        </button>
+        <button class="mode-tab" data-mode="compact">
+          <span class="tab-icon">🎶</span> 歌詞唱讀模式
+        </button>
+        <button class="mode-tab" data-mode="flashcards">
+          <span class="tab-icon">🗂️</span> 單字閃卡庫 (<span id="vocab-badge-count">0</span>)
+        </button>
+        <button class="mode-tab" data-mode="favorites">
+          <span class="tab-icon">⭐</span> 我的精選句 (<span id="fav-badge-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Speech Settings Bar -->
+      <div class="speech-settings-bar">
+        <div class="speech-setting-item">
+          <label for="speech-rate">朗讀語速：</label>
+          <select id="speech-rate">
+            <option value="0.75">0.75x 慢速伴讀</option>
+            <option value="0.9" selected>0.9x 親子教學推薦</option>
+            <option value="1.0">1.0x 原速朗讀</option>
+            <option value="1.2">1.2x 挑戰語速</option>
+          </select>
+        </div>
+        <div class="speech-setting-item">
+          <label for="auto-scroll-toggle">
+            <input type="checkbox" id="auto-scroll-toggle" checked>
+            朗讀時自動滾動
+          </label>
+        </div>
+        <div class="speech-setting-item">
+          <button id="stop-speech-btn" class="btn btn-sm btn-danger" style="display: none;">
+            ⏹ 停止發音
+          </button>
+        </div>
+      </div>
+
+      <!-- Song Section Filter Pills -->
+      <div class="section-pills" id="section-pills">
+        <button class="sec-pill active" data-sec="all">全部段落 (40)</button>
+        <!-- Dynamic populated by JS -->
+      </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+      <!-- 1. Detailed Cards View -->
+      <div id="cards-view" class="view-panel active">
+        <div class="lyrics-grid" id="lyrics-grid">
+          <!-- Dynamically inserted cards -->
+        </div>
+      </div>
+
+      <!-- 2. Compact Sing-Along Lyrics View -->
+      <div id="compact-view" class="view-panel">
+        <div class="compact-container" id="compact-container">
+          <!-- Dynamically inserted compact rows -->
+        </div>
+      </div>
+
+      <!-- 3. Vocabulary Flashcards View -->
+      <div id="flashcards-view" class="view-panel">
+        <div class="flashcards-header">
+          <div class="flashcard-desc">
+            <h3>❄️ 《Let It Go》精選 50+ 英語核心詞彙庫</h3>
+            <p>點擊單字發音、翻轉查看中英文釋義與所在歌詞句</p>
+          </div>
+          <div class="flashcard-actions">
+            <input type="text" id="vocab-search" placeholder="篩選單字..." class="small-input">
+          </div>
+        </div>
+        <div class="flashcards-grid" id="flashcards-grid">
+          <!-- Dynamically inserted flashcards -->
+        </div>
+      </div>
+
+      <!-- 4. Favorites View -->
+      <div id="favorites-view" class="view-panel">
+        <div class="favorites-container" id="favorites-container">
+          <div class="empty-state" id="fav-empty-state">
+            <div class="empty-icon">❄️</div>
+            <h3>尚未收藏任何歌詞</h3>
+            <p>在歌詞卡片右上角點擊星號 ⭐，就能收藏想反覆複習的句子喔！</p>
+          </div>
+          <div class="lyrics-grid" id="fav-lyrics-grid"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <p class="footer-brand">❄️ Frozen: Let It Go · 英語親子唱學網頁</p>
+          <p class="footer-note">讓孩子在動人旋律中愛上英文 · 歌詞版權屬於原創作者與 Disney</p>
+        </div>
+        <div class="footer-right">
+          <button class="footer-link-btn" id="open-gh-modal-btn">
+            🚀 點我查看：如何免費上傳發佈到 GitHub Pages 讓所有人訪問
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Audio Visualizer / Sticky Floating Player Bar (When Playing) -->
+  <div class="floating-player-bar" id="floating-player">
+    <div class="player-info">
+      <span class="player-badge">唱學導讀中</span>
+      <span class="player-text" id="player-current-text">準備朗讀...</span>
+    </div>
+    <div class="player-controls">
+      <button id="player-prev-btn" class="player-icon-btn" title="上一句">⏮</button>
+      <button id="player-toggle-btn" class="player-icon-btn player-play" title="播放/暫停">⏸</button>
+      <button id="player-next-btn" class="player-icon-btn" title="下一句">⏭</button>
+      <button id="player-close-btn" class="player-icon-btn" title="關閉播放器">✕</button>
+    </div>
+  </div>
+
+  <!-- GitHub Deployment Tutorial Modal -->
+  <div class="modal-backdrop" id="gh-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🚀 如何將此網頁連接到 GitHub 並開啟 GitHub Pages</h2>
+        <button class="modal-close-btn" id="close-gh-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">
+          本專案已完全整理好為純前端靜態網頁（HTML5 + CSS3 + Vanilla JS），<strong>不需要繁雜設定或安裝伺服器</strong>，直接上傳到 GitHub 即可永久免費對外公開分享！
+        </p>
+
+        <div class="step-card">
+          <div class="step-num">步驟 1</div>
+          <div class="step-content">
+            <h4>在 GitHub 上新建一個 Repository（專案儲存庫）</h4>
+            <p>1. 打開 <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a></p>
+            <p>2. Repository name 輸入例如：<code>let-it-go-learning</code></p>
+            <p>3. 選擇 <strong>Public</strong>（公開），其他勾選保持預設空白，點擊 <strong>Create repository</strong>。</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">步驟 2</div>
+          <div class="step-content">
+            <h4>推送到 GitHub（終端機指令已為您準備好）</h4>
+            <p>將下列指令複製到終端機執行（記得將 <code>YOUR_USERNAME</code> 換成您的 GitHub 帳號名稱）：</p>
+            <div class="code-block-wrapper">
+              <pre><code id="git-commands">cd /Users/lauren/.gemini/antigravity-ide/scratch/let-it-go-learning-hub
+git init
+git add .
+git commit -m "feat: initial commit for Let It Go learning web"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/let-it-go-learning.git
+git push -u origin main</code></pre>
+              <button class="copy-code-btn" id="copy-git-btn">複製指令</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">步驟 3</div>
+          <div class="step-content">
+            <h4>在 GitHub 啟用 免費網頁託管（GitHub Pages）</h4>
+            <p>1. 進入您剛建立的 GitHub 專案頁面，點選右上角 <strong>Settings</strong>（設定）。</p>
+            <p>2. 在左側選單點選 <strong>Pages</strong>。</p>
+            <p>3. 在 <strong>Branch</strong> 下拉選單選擇 <code>main</code>，資料夾選擇 <code>/ (root)</code>，點擊 <strong>Save</strong>。</p>
+            <p>4. 等待 1~2 分鐘重新整理，上方就會出現專屬網址：<br>
+              <code>https://YOUR_USERNAME.github.io/let-it-go-learning/</code> 🎉
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="modal-ok-btn">我知道了，太棒了！</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
