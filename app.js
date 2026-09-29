@@ -1,6 +1,6 @@
 /**
  * Frozen "Let It Go" - Bilingual Educational Hub
- * Core Application Logic
+ * Core Application Logic with Singing / Melodic Intonation & Web Audio Crystal Chimes
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,9 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let favorites = JSON.parse(localStorage.getItem('let_it_go_favorites') || '[]');
   let isSnowing = true;
   let isPlayingAuto = false;
-  let currentPlayingIndex = -1;
+  let currentPlayingIndex = 0;
+  let stageIndex = 0;
   let synth = window.speechSynthesis;
   let enVoice = null;
+  let audioCtx = null;
 
   // DOM Elements
   const lyricsGrid = document.getElementById('lyrics-grid');
@@ -40,9 +42,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtnText = document.getElementById('play-btn-text');
   const stopSpeechBtn = document.getElementById('stop-speech-btn');
   const speechRateSelect = document.getElementById('speech-rate');
+  const speechToneSelect = document.getElementById('speech-tone');
+  const musicChimeToggle = document.getElementById('music-chime-toggle');
   const autoScrollToggle = document.getElementById('auto-scroll-toggle');
   const toggleSnowBtn = document.getElementById('toggle-snow-btn');
 
+  // Stage Arena Elements
+  const stageCard = document.querySelector('.stage-card');
+  const stageProgress = document.getElementById('stage-progress');
+  const stagePrevText = document.getElementById('stage-prev-text');
+  const stageCurrentEn = document.getElementById('stage-current-en');
+  const stageCurrentLiteral = document.getElementById('stage-current-literal');
+  const stageCurrentOfficial = document.getElementById('stage-current-official');
+  const stageCurrentNote = document.getElementById('stage-current-note');
+  const stageNextText = document.getElementById('stage-next-text');
+  const stagePlayBtn = document.getElementById('stage-play-btn');
+  const stagePrevBtn = document.getElementById('stage-prev-btn');
+  const stageNextBtn = document.getElementById('stage-next-btn');
+  const stageRepeatBtn = document.getElementById('stage-repeat-btn');
+  const toggleStageChimeBtn = document.getElementById('toggle-stage-chime-btn');
+
+  // Floating Player Elements
   const floatingPlayer = document.getElementById('floating-player');
   const playerCurrentText = document.getElementById('player-current-text');
   const playerToggleBtn = document.getElementById('player-toggle-btn');
@@ -50,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const playerNextBtn = document.getElementById('player-next-btn');
   const playerCloseBtn = document.getElementById('player-close-btn');
 
+  // GitHub Modal Elements
   const ghModal = document.getElementById('gh-modal');
   const githubGuideBtn = document.getElementById('github-guide-btn');
   const openGhModalBtn = document.getElementById('open-gh-modal-btn');
@@ -58,23 +79,72 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyGitBtn = document.getElementById('copy-git-btn');
   const toast = document.getElementById('toast');
 
-  // Initialize Speech Synthesis Voices
+  // ==========================================
+  // Web Audio API: Crystal Music Box Chords
+  // ==========================================
+  function initAudio() {
+    if (!audioCtx) {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) {
+        audioCtx = new AudioCtxClass();
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playCrystalChord(lineNum, tone = 'singing') {
+    if (!musicChimeToggle || !musicChimeToggle.checked) return;
+    initAudio();
+    if (!audioCtx) return;
+
+    // Harmonic chord progressions in Key of Fm / Ab (Let It Go key)
+    const chords = [
+      [174.61, 261.63, 349.23, 415.30, 523.25], // Fm: F3, C4, F4, Ab4, C5
+      [138.59, 207.65, 277.18, 349.23, 415.30], // Db: Db3, Ab3, Db4, F4, Ab4
+      [155.56, 233.08, 311.13, 392.00, 466.16], // Eb: Eb3, Bb3, Eb4, G4, Bb4
+      [207.65, 261.63, 311.13, 415.30, 523.25]  // Ab: Ab3, C4, Eb4, Ab4, C5
+    ];
+    const chord = chords[lineNum % chords.length];
+
+    const now = audioCtx.currentTime;
+    chord.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = (tone === 'queen') ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, now + i * 0.07);
+
+      const start = now + i * 0.07;
+      const dur = 2.0;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(0.08, start + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(start);
+      osc.stop(start + dur + 0.1);
+    });
+  }
+
+  // Voice Selection
   function loadVoices() {
     if (!synth) return;
     const voices = synth.getVoices();
-    // Prefer natural US/UK English voice
     enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Karen') || v.name.includes('Victoria'))) ||
               voices.find(v => v.lang.startsWith('en-US')) ||
               voices.find(v => v.lang.startsWith('en')) ||
               null;
   }
-
   loadVoices();
   if (synth.onvoiceschanged !== undefined) {
     synth.onvoiceschanged = loadVoices;
   }
 
-  // Toast Notification
+  // Toast
   function showToast(msg) {
     toast.textContent = msg;
     toast.classList.add('show');
@@ -83,29 +153,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2400);
   }
 
-  // Speak Text Function
-  function speak(text, onEndCallback = null) {
+  // Enhanced Speak Function with Singing / Melodic Profiles
+  function speak(text, onEndCallback = null, lineNum = 1) {
     if (!synth) {
       showToast('⚠️ 您的瀏覽器不支援語音合成功能');
       return;
     }
     synth.cancel();
+    initAudio();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = parseFloat(speechRateSelect.value) || 0.9;
-    utterance.pitch = 1.0;
+    const baseRate = parseFloat(speechRateSelect.value) || 0.9;
+    const tone = speechToneSelect ? speechToneSelect.value : 'singing';
+
+    let pitch = 1.0;
+    let rateMult = 1.0;
+
+    if (tone === 'singing') {
+      pitch = 1.42;  // High, melodic singing intonation
+      rateMult = 0.95; // Slight lyrical cadence
+    } else if (tone === 'fairy') {
+      pitch = 1.62;  // Playful, cheerful, high fairy tone
+      rateMult = 1.05;
+    } else if (tone === 'queen') {
+      pitch = 1.15;  // Resonant, empowered Queen Elsa tone
+      rateMult = 0.88;
+    } else {
+      pitch = 1.0;   // Standard clear tutor
+      rateMult = 1.0;
+    }
+
+    utterance.pitch = pitch;
+    utterance.rate = baseRate * rateMult;
+    utterance.volume = 1.0;
+
     if (enVoice) {
       utterance.voice = enVoice;
     } else {
       utterance.lang = 'en-US';
     }
 
-    if (onEndCallback) {
-      utterance.onend = onEndCallback;
-      utterance.onerror = () => {
-        onEndCallback();
-      };
-    }
+    // Trigger Crystal Chime Accompaniment
+    playCrystalChord(lineNum, tone);
+
+    // Wave animation on stage
+    if (stageCard) stageCard.classList.add('singing-active');
+
+    utterance.onend = () => {
+      if (stageCard) stageCard.classList.remove('singing-active');
+      if (onEndCallback) onEndCallback();
+    };
+
+    utterance.onerror = () => {
+      if (stageCard) stageCard.classList.remove('singing-active');
+      if (onEndCallback) onEndCallback();
+    };
 
     synth.speak(utterance);
     stopSpeechBtn.style.display = 'inline-flex';
@@ -113,14 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Stop Speech
   function stopAllSpeech() {
-    if (synth) {
-      synth.cancel();
-    }
+    if (synth) synth.cancel();
     isPlayingAuto = false;
-    currentPlayingIndex = -1;
     playBtnText.textContent = '自動逐句朗讀';
     stopSpeechBtn.style.display = 'none';
     floatingPlayer.classList.remove('show');
+    if (stageCard) stageCard.classList.remove('singing-active');
+    if (stagePlayBtn) stagePlayBtn.innerHTML = '<span>▶️ 開始旋律伴唱</span>';
     clearPlayingHighlights();
   }
 
@@ -173,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Filter lyrics by section and search query
+  // Filter lyrics
   function getFilteredLyrics() {
     return lyricsData.filter(item => {
       const matchSec = currentSection === 'all' || item.sec === currentSection;
@@ -217,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = document.querySelector(`.lyric-card[data-n="${num}"]`);
     if (card) {
       card.classList.add('highlight-playing');
-      if (autoScrollToggle.checked) {
+      if (autoScrollToggle.checked && currentMode === 'cards') {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
@@ -240,17 +341,19 @@ document.addEventListener('DOMContentLoaded', () => {
   window.playLine = function(num) {
     const item = lyricsData.find(d => d.n === num);
     if (!item) return;
+    stageIndex = item.n - 1;
+    updateStageDisplay();
     highlightPlayingCard(num);
     speak(item.en, () => {
       clearPlayingHighlights();
       stopSpeechBtn.style.display = 'none';
-    });
+    }, item.n);
   };
 
   // Play Single Vocab
   window.playWord = function(word, event) {
     if (event) event.stopPropagation();
-    speak(word);
+    speak(word, null, 1);
     showToast(`🔊 發音: "${word}"`);
   };
 
@@ -355,7 +458,71 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  // 3. Render Flashcards View
+  // 3. Stage Arena (Sing-Along Studio) Logic
+  function updateStageDisplay() {
+    if (!stageCurrentEn) return;
+    const current = lyricsData[stageIndex];
+    const prev = stageIndex > 0 ? lyricsData[stageIndex - 1] : null;
+    const next = stageIndex < lyricsData.length - 1 ? lyricsData[stageIndex + 1] : null;
+
+    stageProgress.textContent = `第 ${current.n} / ${lyricsData.length} 句 · ${current.sec}`;
+    stagePrevText.textContent = prev ? `上一句：${prev.en}` : '（歌曲開始）';
+    stageCurrentEn.textContent = current.en;
+    stageCurrentLiteral.textContent = `直譯：${current.literal_zh}`;
+    stageCurrentOfficial.textContent = `🎵 官方中文：${current.zh_lyric}`;
+    stageCurrentNote.textContent = `❄️ 導讀：${current.parent_note}`;
+    stageNextText.textContent = next ? `下一句：${next.en}` : '（全曲完結 🎉）';
+  }
+
+  if (stagePlayBtn) {
+    stagePlayBtn.addEventListener('click', () => {
+      if (isPlayingAuto) {
+        stopAllSpeech();
+      } else {
+        playSequenceFromIndex(stageIndex);
+      }
+    });
+  }
+
+  if (stagePrevBtn) {
+    stagePrevBtn.addEventListener('click', () => {
+      if (stageIndex > 0) {
+        stageIndex--;
+        updateStageDisplay();
+        if (isPlayingAuto) playSequenceFromIndex(stageIndex);
+        else playLine(stageIndex + 1);
+      }
+    });
+  }
+
+  if (stageNextBtn) {
+    stageNextBtn.addEventListener('click', () => {
+      if (stageIndex < lyricsData.length - 1) {
+        stageIndex++;
+        updateStageDisplay();
+        if (isPlayingAuto) playSequenceFromIndex(stageIndex);
+        else playLine(stageIndex + 1);
+      }
+    });
+  }
+
+  if (stageRepeatBtn) {
+    stageRepeatBtn.addEventListener('click', () => {
+      playLine(stageIndex + 1);
+    });
+  }
+
+  if (toggleStageChimeBtn) {
+    toggleStageChimeBtn.addEventListener('click', () => {
+      musicChimeToggle.checked = !musicChimeToggle.checked;
+      toggleStageChimeBtn.innerHTML = musicChimeToggle.checked
+        ? '<span>🎶</span> 水晶和弦伴奏：開啟中'
+        : '<span>🔇</span> 水晶和弦伴奏：已關閉';
+      showToast(musicChimeToggle.checked ? '🎶 已開啟水晶和弦伴奏' : '已關閉水晶和弦伴奏');
+    });
+  }
+
+  // 4. Render Flashcards View
   function renderFlashcards() {
     let filteredVocab = allVocabList;
     if (vocabSearchQuery) {
@@ -398,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  // 4. Render Favorites View
+  // 5. Render Favorites View
   function renderFavorites() {
     const favItems = lyricsData.filter(item => favorites.includes(item.n));
     if (favItems.length === 0) {
@@ -437,6 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCards(filtered);
     } else if (currentMode === 'compact') {
       renderCompact(filtered);
+    } else if (currentMode === 'singstudio') {
+      updateStageDisplay();
     } else if (currentMode === 'flashcards') {
       renderFlashcards();
     } else if (currentMode === 'favorites') {
@@ -479,43 +648,53 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Speech Tone change listener
+  if (speechToneSelect) {
+    speechToneSelect.addEventListener('change', () => {
+      const selected = speechToneSelect.options[speechToneSelect.selectedIndex].text;
+      showToast(`✨ 語調已切換為：${selected}`);
+    });
+  }
+
   // ==========================================
   // Continuous Karaoke Sing-Along Player
   // ==========================================
   function playSequenceFromIndex(idx) {
     if (idx < 0 || idx >= lyricsData.length) {
       stopAllSpeech();
-      showToast('🎉 全曲 40 句朗讀完畢！太棒了！');
+      showToast('🎉 全曲 40 句朗讀伴唱完畢！太棒了！');
       return;
     }
 
     currentPlayingIndex = idx;
+    stageIndex = idx;
     isPlayingAuto = true;
     const item = lyricsData[idx];
 
-    // Update Player UI
+    // Update Player & Stage UI
     floatingPlayer.classList.add('show');
     playerCurrentText.textContent = `#${item.n} ${item.en}`;
     playerToggleBtn.textContent = '⏸';
-    playBtnText.textContent = `朗讀中 (#${item.n}/40)`;
+    playBtnText.textContent = `伴唱中 (#${item.n}/40)`;
+    if (stagePlayBtn) stagePlayBtn.innerHTML = '<span>⏸ 暫停伴唱</span>';
     highlightPlayingCard(item.n);
+    updateStageDisplay();
 
     speak(item.en, () => {
       if (!isPlayingAuto) return;
-      // Brief pause between lines before next line
       setTimeout(() => {
         if (isPlayingAuto) {
           playSequenceFromIndex(idx + 1);
         }
-      }, 750);
-    });
+      }, 700);
+    }, item.n);
   }
 
   karaokePlayBtn.addEventListener('click', () => {
     if (isPlayingAuto) {
       stopAllSpeech();
     } else {
-      playSequenceFromIndex(currentPlayingIndex >= 0 ? currentPlayingIndex : 0);
+      playSequenceFromIndex(stageIndex >= 0 ? stageIndex : 0);
     }
   });
 
@@ -524,9 +703,11 @@ document.addEventListener('DOMContentLoaded', () => {
       synth.cancel();
       isPlayingAuto = false;
       playerToggleBtn.textContent = '▶';
-      playBtnText.textContent = '繼續朗讀';
+      playBtnText.textContent = '繼續伴唱';
+      if (stagePlayBtn) stagePlayBtn.innerHTML = '<span>▶️ 繼續伴唱</span>';
+      if (stageCard) stageCard.classList.remove('singing-active');
     } else {
-      playSequenceFromIndex(currentPlayingIndex >= 0 ? currentPlayingIndex : 0);
+      playSequenceFromIndex(stageIndex >= 0 ? stageIndex : 0);
     }
   });
 
@@ -650,5 +831,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial Initialization
   initSections();
+  updateStageDisplay();
   renderCurrentView();
 });

@@ -76,6 +76,9 @@
         <button class="mode-tab" data-mode="compact">
           <span class="tab-icon">🎶</span> 歌詞唱讀模式
         </button>
+        <button class="mode-tab" data-mode="singstudio">
+          <span class="tab-icon">🎤</span> 伴唱大舞台
+        </button>
         <button class="mode-tab" data-mode="flashcards">
           <span class="tab-icon">🗂️</span> 單字閃卡庫 (<span id="vocab-badge-count">0</span>)
         </button>
@@ -84,21 +87,36 @@
         </button>
       </div>
 
-      <!-- Speech Settings Bar -->
+      <!-- Speech & Singing Settings Bar -->
       <div class="speech-settings-bar">
         <div class="speech-setting-item">
-          <label for="speech-rate">朗讀語速：</label>
-          <select id="speech-rate">
-            <option value="0.75">0.75x 慢速伴讀</option>
-            <option value="0.9" selected>0.9x 親子教學推薦</option>
-            <option value="1.0">1.0x 原速朗讀</option>
-            <option value="1.2">1.2x 挑戰語速</option>
+          <label for="speech-tone">🎤 語音語調風格：</label>
+          <select id="speech-tone">
+            <option value="singing" selected>🎵 旋律歌唱風 (Singing & Melodic)</option>
+            <option value="fairy">🧚 冰雪精靈輕快唱 (Playful Sprite)</option>
+            <option value="queen">👑 艾莎女王霸氣風 (Empowered Queen)</option>
+            <option value="tutor">📖 標準清晰教學 (Clear Tutor)</option>
           </select>
         </div>
         <div class="speech-setting-item">
-          <label for="auto-scroll-toggle">
+          <label for="speech-rate">語速：</label>
+          <select id="speech-rate">
+            <option value="0.75">0.75x 慢速伴讀</option>
+            <option value="0.9" selected>0.9x 親子推薦</option>
+            <option value="1.0">1.0x 原速朗讀</option>
+            <option value="1.15">1.15x 節奏暢唱</option>
+          </select>
+        </div>
+        <div class="speech-setting-item">
+          <label for="music-chime-toggle" style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="music-chime-toggle" checked>
+            <span>🎶 水晶八音盒和弦伴奏</span>
+          </label>
+        </div>
+        <div class="speech-setting-item">
+          <label for="auto-scroll-toggle" style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
             <input type="checkbox" id="auto-scroll-toggle" checked>
-            朗讀時自動滾動
+            <span>自動滾動</span>
           </label>
         </div>
         <div class="speech-setting-item">
@@ -131,7 +149,74 @@
         </div>
       </div>
 
-      <!-- 3. Vocabulary Flashcards View -->
+      <!-- 3. Sing-Along Studio (Karaoke Arena) View -->
+      <div id="singstudio-view" class="view-panel">
+        <div class="singstudio-container">
+          <!-- Stage Card -->
+          <div class="stage-card">
+            <div class="stage-top-bar">
+              <span class="stage-badge">🌟 LET IT GO 練唱大舞台</span>
+              <span class="stage-progress" id="stage-progress">第 1 / 40 句</span>
+            </div>
+
+            <div class="stage-teleprompter">
+              <div class="stage-prev-line" id="stage-prev-text">準備開始...</div>
+              <div class="stage-main-line">
+                <span class="stage-en-text" id="stage-current-en">The snow glows white on the mountain tonight</span>
+              </div>
+              <div class="stage-sub-translations">
+                <p class="stage-zh-literal" id="stage-current-literal">直譯：今晚山上的雪閃著白光</p>
+                <p class="stage-zh-official" id="stage-current-official">🎵 官方中文：白雪紛飛一片銀色世界</p>
+                <p class="stage-note" id="stage-current-note">❄️ 導讀：雪山上的夜晚，雪亮亮的，好漂亮！</p>
+              </div>
+              <div class="stage-next-line" id="stage-next-text">下一句：Not a footprint to be seen</div>
+            </div>
+
+            <!-- Stage Controls -->
+            <div class="stage-controls">
+              <button class="btn btn-glass" id="stage-prev-btn">⏮ 上一句</button>
+              <button class="btn btn-primary btn-lg" id="stage-play-btn">
+                <span>▶️ 開始旋律伴唱</span>
+              </button>
+              <button class="btn btn-glass" id="stage-next-btn">下一句 ⏭</button>
+              <button class="btn btn-glass" id="stage-repeat-btn" title="單句循環練習">🔂 重唱此句</button>
+            </div>
+
+            <!-- Chime Melodic Sound Wave Visualizer -->
+            <div class="stage-soundwave">
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+          </div>
+
+          <!-- Video & Backing Track Tips Card -->
+          <div class="stage-companion-card">
+            <div class="companion-header">
+              <h4>🎬 親子原曲 / 伴奏練唱指南</h4>
+              <span class="companion-tag">Disney Official Sing-Along</span>
+            </div>
+            <p class="companion-desc">
+              點擊下方按鈕可於彈窗中開啟迪士尼官方《Let It Go》Sing-Along 伴唱原聲版影片，跟隨動態雪花字幕，搭配本頁面的 40 句逐句導讀與單字解析，孩子學得更快、唱得更有自信！
+            </p>
+            <div class="companion-actions">
+              <a href="https://www.youtube.com/results?search_query=frozen+let+it+go+sing+along+official" target="_blank" rel="noopener" class="btn btn-gh">
+                <span>▶️</span> 前往 YouTube 觀看官方 Sing-Along 伴唱影片
+              </a>
+              <button class="btn btn-glass" id="toggle-stage-chime-btn">
+                <span>🎶</span> 水晶和弦伴奏：開啟中
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Vocabulary Flashcards View -->
       <div id="flashcards-view" class="view-panel">
         <div class="flashcards-header">
           <div class="flashcard-desc">
@@ -147,7 +232,7 @@
         </div>
       </div>
 
-      <!-- 4. Favorites View -->
+      <!-- 5. Favorites View -->
       <div id="favorites-view" class="view-panel">
         <div class="favorites-container" id="favorites-container">
           <div class="empty-state" id="fav-empty-state">
